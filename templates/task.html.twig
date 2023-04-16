@@ -1,0 +1,80 @@
+{% extends "base.html.twig" %}
+
+{% block content %}
+    <div class="clearfix">&nbsp;</div>
+
+    <div class="container text-center">
+        <div class="row justify-content-md-center">
+            <div class="col-md-auto">
+                {% if false == isTasksAssigned %}
+                    <form action="{{ path('app_task_assign_to_developers')}}" method="POST">
+                        <button type="submit" class="btn btn-primary">Assign Tasks</button>
+                    </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="clearfix">&nbsp;</div>
+
+    {% if taskData is defined %}
+        <div class="container text-center">
+            <div class="row justify-content-md-center">
+                <div class="col-md-auto">
+                    {% if totalWeek is defined %}
+                        <p>Tasks are assigned and this project ends in {{ totalWeek }} weeks.</p>
+                    {% endif %}
+
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Tasks</th>
+                            </tr>
+                        </thead>
+                        <tr>
+                            <td>
+                                {% for task in taskData %}
+                                    <td>
+                                        <table class="table">
+                                            <thead>
+                                            <tr>
+                                                {{ taskData }}
+                                                <th scope="col">#</th>
+                                                <th scope="col">First</th>
+                                                <th scope="col">Last</th>
+                                                <th scope="col">Handle</th>
+                                            </tr>
+                                            </thead>
+                                            <tbody>
+                                            <tr>
+                                                <th scope="row">1</th>
+                                                <td>Mark</td>
+                                                <td>Otto</td>
+                                                <td>@mdo</td>
+                                            </tr>
+                                            <tr>
+                                                <th scope="row">2</th>
+                                                <td>Jacob</td>
+                                                <td>Thornton</td>
+                                                <td>@fat</td>
+                                            </tr>
+                                            <tr>
+                                                <th scope="row">3</th>
+                                                <td colspan="2">Larry the Bird</td>
+                                                <td>@twitter</td>
+                                            </tr>
+                                            </tbody>
+                                        </table>
+                                    </td>
+                                {% endfor %}
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+
+{% endblock %}

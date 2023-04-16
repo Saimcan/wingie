@@ -2,7 +2,6 @@
 
 namespace App\Service;
 
-use App\Entity\Developer;
 use App\Entity\Task;
 use App\Repository\TaskRepository;
 use Symfony\Component\HttpClient\NativeHttpClient;
@@ -39,6 +38,7 @@ class TaskService
 
     public function receiveTasks(): void
     {
+        //A factory approach can be applied later on.
         $client = new NativeHttpClient();
         $response = $client->request(
             'GET',
@@ -59,34 +59,62 @@ class TaskService
         $this->insertData($secondApiAdapter);
     }
 
-    public function assignTasksToDevelopers(int $totalHours, array $arrayOfDevelopers)
+    public function assignTasksToDevelopers(int $totalHours, array $arrayOfDevelopers): array
     {
         $taskModel = new Task();
-        $teamTotalTaskPowerInHours = $taskModel->calculateTotalDeveloperHours($totalHours, $arrayOfDevelopers);
-        $teamTaskPowerPerHour = $taskModel->calculateTotalDeveloperTaskPower($arrayOfDevelopers);
-        $allTasks = $this->taskRepository->findBy(['assignedToDeveloper' => null]);
+        $developerTasksWeekly = [];
+        $weekCount = 0;
 
-        // Assign tasks to each developer based on their task power and seniority level
-        foreach ($arrayOfDevelopers as &$developer)
+        while (count($this->taskRepository->findBy(['assignedToDeveloper' => null])) > 0)
         {
-            /**
-             * @var Developer $developer
-             */
+            $weekCount++;
+            $arrayOfDevelopers = $taskModel->calculateTotalDeveloperHours($totalHours, $arrayOfDevelopers);
 
-            // Calculate the percentage of tasks to be assigned to the developer
-            $percentage = $developer->getLevel() / $teamTaskPowerPerHour * 100;
+            foreach ($arrayOfDevelopers as $developer)
+            {
+                //get tasks according to seniority level
+                $taskList = $this->taskRepository->findBy([
+                    'assignedToDeveloper' => null,
+                    'level' => $developer->getLevel()
+                ], [
+                    'estimatedDuration' => 'ASC'
+                ]);
 
-            // Calculate the number of tasks to be assigned to the developer
-            $tasks = round($teamTotalTaskPowerInHours * $percentage / 100);
+                //check if excess jobs needs to get applied for non-working developer
+                if(0 == count($taskList) && $developer->getTaskWeightInHours() > 0)
+                {
+                    $developerLevel = $developer->getLevel();
+                    while ($developerLevel > 0){
+                        $developerLevel--;
+                        $taskList = $this->taskRepository->findBy([
+                            'assignedToDeveloper' => null,
+                            'level' => $developerLevel
+                        ], [
+                            'estimatedDuration' => 'ASC'
+                        ]);
 
-            // Round the number of tasks up to the nearest whole number
-            if($tasks < 1) $tasks = 1;
+                        if(count($taskList) > 0){break;}
+                    }
+                }
 
-            $developer->setTaskWeightInHours($tasks);
+                //assign tasks to the developers equal to their level
+                foreach ($taskList as $task)
+                {
+                    if($developer->getTaskWeightInHours() > 0 &&
+                        $developer->getTaskWeightInHours() > $task->getEstimatedDuration())
+                    {
+                        $developerTasksWeekly[$weekCount][$developer->getId()][] = $task;
+                        $task->setAssignedToDeveloper($developer);
+                        $developer->setTaskWeightInHours($developer->getTaskWeightInHours() - $task->getEstimatedDuration());
+                    }
+                    else{break;}
+
+                    //flushing here, might get refactored later to reduce workload onto database.
+                    $this->taskRepository->save($task, true);
+                }
+            }
         }
 
-
-
-
+        return $developerTasksWeekly;
     }
 }

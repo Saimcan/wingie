@@ -78,23 +78,16 @@ class Task
         return $this;
     }
 
-    public function calculateTotalDeveloperHours(int $totalHours, array $arrayOfDevelopers): float|int
+    public function calculateTotalDeveloperHours(int $totalHours, array $arrayOfDevelopers): array
     {
-        $totalDeveloperCount = count($arrayOfDevelopers);
-        return $this->calculateTotalDeveloperTaskPower($arrayOfDevelopers) * $totalHours * $totalDeveloperCount;
-    }
-
-    public function calculateTotalDeveloperTaskPower(array $arrayOfDevelopers): ?int
-    {
-        $totalTaskPower = 0;
         /**
          * @var Developer $developer
          */
         foreach ($arrayOfDevelopers as $developer)
         {
-            $totalTaskPower += $developer->getLevel();
+            $developer->setTaskWeightInHours($developer->getLevel() * $totalHours);
         }
 
-        return $totalTaskPower;
+        return $arrayOfDevelopers;
     }
 }
