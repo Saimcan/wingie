@@ -24,6 +24,9 @@ class Developer
     #[ORM\OneToMany(mappedBy: 'assignedToDeveloper', targetEntity: Task::class)]
     private Collection $tasks;
 
+    #[ORM\Column(nullable: true)]
+    private ?int $taskWeightInHours = null;
+
     public function __construct()
     {
         $this->tasks = new ArrayCollection();
@@ -84,6 +87,18 @@ class Developer
                 $task->setAssignedToDeveloper(null);
             }
         }
+
+        return $this;
+    }
+
+    public function getTaskWeightInHours(): ?int
+    {
+        return $this->taskWeightInHours;
+    }
+
+    public function setTaskWeightInHours(?int $taskWeightInHours): self
+    {
+        $this->taskWeightInHours = $taskWeightInHours;
 
         return $this;
     }
